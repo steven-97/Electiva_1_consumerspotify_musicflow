@@ -1,7 +1,7 @@
 import React from "react";
 
 const SidebarItem = ({ title, subtitle, image}) => (
-  <li className="bg-[#1A1A35] px-3 py-2 rounded-lg hover:bg-[#2A2A4B] transition-all flex items-center gap-3">
+  <li className="bg-[#1A1A35] px-3 py-2 mt-1 rounded-lg hover:bg-[#2A2A4B] transition-all flex items-center gap-3">
     <img
       src={image}
       alt="Album cover"
