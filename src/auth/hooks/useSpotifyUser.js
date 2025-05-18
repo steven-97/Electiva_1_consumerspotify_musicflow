@@ -85,3 +85,18 @@ export const getSpotifyTrackById  = async (accessToken, id) => {
     throw error;
   }
 };
+
+export const saveSpotifyData = async (userId, token) => {
+  const profile = await getSpotifyUserProfile(token);
+  const playlists = await getSpotifyCurrentUserPlaylist(token);
+  
+  const userRef = doc(db, "users", userId);
+  await setDoc(userRef, {
+    spotify: {
+      token,
+      profile,
+      playlists,
+      lastUpdated: new Date()
+    }
+  }, { merge: true });
+};
