@@ -13,10 +13,14 @@ const Header = () => {
 
   useEffect(() => {
     const fetchSpotifyProfile = async () => {
+      console.log("userState", userState);
+
       if (userState.logged && userState.user?.spotify?.token) {
         try {
           setLoading(true);
-          const profile = await getSpotifyUserProfile(userState.user.spotify.token);
+          const profile = await getSpotifyUserProfile(
+            userState.user.spotify.token
+          );
           setSpotifyProfile(profile);
         } catch (err) {
           console.error("Error al cargar perfil de Spotify:", err);
@@ -29,6 +33,8 @@ const Header = () => {
     fetchSpotifyProfile();
   }, [userState]);
 
+  console.log("------", spotifyProfile);
+
   const handleLogout = () => {
     logout();
     setOpen(false);
@@ -36,10 +42,10 @@ const Header = () => {
   };
 
   // Obtener imagen del usuario (Spotify, Google o default)
-  const getUserImage = (size = 'small') => {
+  const getUserImage = (size = "small") => {
     if (spotifyProfile?.images?.length > 0) {
-      const img = spotifyProfile.images.find(img => 
-        size === 'large' ? img.width >= 300 : img.width === 64
+      const img = spotifyProfile.images.find((img) =>
+        size === "large" ? img.width >= 300 : img.width === 64
       );
       return img?.url;
     }
@@ -48,25 +54,28 @@ const Header = () => {
 
   // Obtener nombre para mostrar
   const getDisplayName = () => {
-    return spotifyProfile?.display_name || 
-           userState.user?.displayName || 
-           userState.user?.email?.split('@')[0] || 
-           "Usuario";
+    return (
+      spotifyProfile?.display_name ||
+      userState.user?.displayName ||
+      userState.user?.email?.split("@")[0] ||
+      "Usuario"
+    );
   };
 
   // Obtener email para mostrar
   const getDisplayEmail = () => {
-    return userState.user?.email || 
-           spotifyProfile?.email || 
-           "Sin correo";
+    return userState.user?.email || spotifyProfile?.email || "Sin correo";
   };
 
-  const smallImage = getUserImage('small');
-  const largeImage = getUserImage('large');
+  const smallImage = getUserImage("small");
+  const largeImage = getUserImage("large");
 
   return (
     <header className="w-full h-20 px-6 py-3 flex justify-between items-center bg-gradient-to-r from-[#1A1A35] to-[#2A2A4B] text-white shadow-lg sticky top-0 z-50">
-      <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+      <Link
+        to="/"
+        className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+      >
         <div className="bg-[#1DB954] p-2 rounded-full">
           <Music size={24} className="text-white" />
         </div>
@@ -79,7 +88,9 @@ const Header = () => {
         <div className="relative">
           <button
             onClick={() => setOpen(!open)}
-            className={`flex items-center space-x-3 ${open ? 'bg-[#3A3A5D]' : 'bg-[#2A2A4B] hover:bg-[#3A3A5D]'} rounded-full px-4 py-2 text-sm text-white transition-all`}
+            className={`flex items-center space-x-3 ${
+              open ? "bg-[#3A3A5D]" : "bg-[#2A2A4B] hover:bg-[#3A3A5D]"
+            } rounded-full px-4 py-2 text-sm text-white transition-all`}
             aria-label="Menú de usuario"
           >
             {smallImage ? (
@@ -113,8 +124,12 @@ const Header = () => {
                   </div>
                 )}
                 <div className="ml-3 overflow-hidden">
-                  <p className="text-sm font-semibold truncate">{getDisplayName()}</p>
-                  <p className="text-xs text-gray-300 truncate">{getDisplayEmail()}</p>
+                  <p className="text-sm font-semibold truncate">
+                    {getDisplayName()}
+                  </p>
+                  <p className="text-xs text-gray-300 truncate">
+                    {getDisplayEmail()}
+                  </p>
                   {userState.user?.spotify && (
                     <span className="inline-block mt-1 px-2 py-0.5 text-xs bg-[#1DB954] rounded-full">
                       Spotify Conectado
@@ -122,10 +137,10 @@ const Header = () => {
                   )}
                 </div>
               </div>
-              
+
               <div className="border-t border-[#3A3A5D]">
-                <Link 
-                  to="/settings" 
+                <Link
+                  to="/settings"
                   className="flex items-center w-full px-4 py-3 text-sm hover:bg-[#3A3A5D] transition-colors"
                   onClick={() => setOpen(false)}
                 >
@@ -155,14 +170,14 @@ const Header = () => {
         </div>
       ) : (
         <div className="flex space-x-3">
-          <Link 
-            to="/login" 
+          <Link
+            to="/login"
             className="bg-transparent hover:bg-[#3A3A5D] text-white px-4 py-2 rounded-full text-sm font-medium border border-[#3A3A5D] transition-colors"
           >
             Iniciar sesión
           </Link>
-          <Link 
-            to="/register" 
+          <Link
+            to="/register"
             className="bg-[#1DB954] hover:bg-[#1AA84C] text-white px-4 py-2 rounded-full text-sm font-medium transition-colors"
           >
             Registrarse
