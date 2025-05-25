@@ -21,6 +21,7 @@ export const authReducer = (state, action) => {
         logged: false,
         errorMessage: action.payload,
       };
+
     default:
       return state;
   }

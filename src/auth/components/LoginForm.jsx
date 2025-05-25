@@ -3,6 +3,7 @@ import UserContext from "../contexts/UserContext";
 import { useForm } from "../../hooks/useForm";
 import { useNavigate } from "react-router-dom";
 import { SpotifyAuthButton } from "./SpotifyAuthButton";
+import { useFirebaseAuth } from "../hooks/useFirebaseAuth";
 
 const initialForm = {
   email: "",
@@ -11,19 +12,30 @@ const initialForm = {
 
 const LoginForm = () => {
   const navigate = useNavigate();
-  const { login } = useContext(UserContext);
+  const { login, loginWithGoogle, loginWithEmail } = useContext(UserContext);
 
   const { email, password, onInputChange } = useForm(initialForm);
 
-  const onLoginUser = async (e) => {
-    e.preventDefault();
-    await login({ email, password });
-    navigate("/", { replace: true });
+  const handleGoogleLogin = async () => {
+    const success = await loginWithGoogle();
+    if (success) navigate("/");
   };
+
+  const handleEmailLogin = async (e) => {
+    e.preventDefault();
+    const success = await loginWithEmail(formData.email, formData.password);
+    if (success) navigate("/");
+  };
+
+  // const onLoginUser = async (e) => {
+  //   e.preventDefault();
+  //   await login({ email, password });
+  //   navigate("/", { replace: true });
+  // };
 
   return (
     <>
-      <form onSubmit={onLoginUser} className="space-y-6">
+      <form onSubmit={handleEmailLogin} className="space-y-6">
         <div>
           <label
             htmlFor="email"
@@ -88,6 +100,14 @@ const LoginForm = () => {
         </div>
         <div className="mt-4">
           <SpotifyAuthButton />
+        </div>
+        <div className="mt-4">
+          <button
+            onClick={handleGoogleLogin}
+            className="flex w-full justify-center rounded-md bg-red-700 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-red-600 mt-4"
+          >
+            Continuar con Google
+          </button>
         </div>
       </div>
     </>

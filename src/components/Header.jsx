@@ -1,118 +1,187 @@
-import React, { useContext, useEffect, useState } from "react";
-import { LogOut, Settings, User } from "lucide-react";
-import { Link } from "react-router-dom";
+import React, { useContext, useState, useEffect } from "react";
+import { LogOut, Settings, User, Music } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import UserContext from "../auth/contexts/UserContext";
 import { getSpotifyUserProfile } from "../auth/hooks/useSpotifyUser";
 
 const Header = () => {
   const [open, setOpen] = useState(false);
-  const [userProfile, setUserProfile] = useState(null);
+  const [spotifyProfile, setSpotifyProfile] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   const { logout, userState } = useContext(UserContext);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (userState.logged && userState.user.token) {
+    const fetchSpotifyProfile = async () => {
+      console.log("userState", userState);
+
+      if (userState.logged && userState.user?.spotify?.token) {
         try {
           setLoading(true);
-          const profile = await getSpotifyUserProfile(userState.user.token);
-
-          setUserProfile(profile);
-          setLoading(false);
+          const profile = await getSpotifyUserProfile(
+            userState.user.spotify.token
+          );
+          setSpotifyProfile(profile);
         } catch (err) {
+          console.error("Error al cargar perfil de Spotify:", err);
+        } finally {
           setLoading(false);
-          setError("Error al cargar el perfil del usuario.");
         }
       }
     };
 
-    fetchUserProfile();
+    fetchSpotifyProfile();
   }, [userState]);
 
-  const onLogout = () => {
+  console.log("------", spotifyProfile);
+
+  const handleLogout = () => {
     logout();
+    setOpen(false);
+    navigate("/login");
   };
 
-  const smallImage =
-    userProfile?.images?.find((img) => img.width === 64)?.url ||
-    "default-avatar.jpg";
-  const largeImage =
-    userProfile?.images?.find((img) => img.width === 300)?.url ||
-    "default-avatar.jpg";
+  // Obtener imagen del usuario (Spotify, Google o default)
+  const getUserImage = (size = "small") => {
+    if (spotifyProfile?.images?.length > 0) {
+      const img = spotifyProfile.images.find((img) =>
+        size === "large" ? img.width >= 300 : img.width === 64
+      );
+      return img?.url;
+    }
+    return userState.user?.photoURL || null;
+  };
+
+  // Obtener nombre para mostrar
+  const getDisplayName = () => {
+    return (
+      spotifyProfile?.display_name ||
+      userState.user?.displayName ||
+      userState.user?.email?.split("@")[0] ||
+      "Usuario"
+    );
+  };
+
+  // Obtener email para mostrar
+  const getDisplayEmail = () => {
+    return userState.user?.email || spotifyProfile?.email || "Sin correo";
+  };
+
+  const smallImage = getUserImage("small");
+  const largeImage = getUserImage("large");
 
   return (
-    <header className="w-full  h-22 px-6 py-4 flex justify-between items-center bg-[#1A1A35] text-white shadow-lg">
-      <Link to="/" className="flex items-center gap-3">
-        <img
-          src="/logo.jpg"
-          alt="Music Flow logo"
-          width={50}
-          height={50}
-          className="rounded-full"
-        />
-        <span className="text-2xl font-bold tracking-wide">Music Flow</span>
+    <header className="w-full h-20 px-6 py-3 flex justify-between items-center bg-gradient-to-r from-[#1A1A35] to-[#2A2A4B] text-white shadow-lg sticky top-0 z-50">
+      <Link
+        to="/"
+        className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+      >
+        <div className="bg-[#1DB954] p-2 rounded-full">
+          <Music size={24} className="text-white" />
+        </div>
+        <span className="text-2xl font-bold tracking-wide bg-gradient-to-r from-[#1DB954] to-[#4B00FF] bg-clip-text text-transparent">
+          Music Flow
+        </span>
       </Link>
 
       {userState.logged ? (
         <div className="relative">
-          {loading ? (
-            <span className="text-sm text-gray-400">Cargando...</span>
-          ) : error ? (
-            <span className="text-sm text-red-500">{error}</span>
-          ) : (
-            <button
-              onClick={() => setOpen(!open)}
-              className="flex items-center space-x-3 bg-[#2A2A4B] hover:bg-[#3A3A5D] rounded-full px-4 py-2 text-sm text-white transition-all"
-            >
-              {smallImage ? (
-                <img
-                  src={smallImage}
-                  alt="User Avatar"
-                  className="w-8 h-8 rounded-full object-cover"
-                />
-              ) : (
-                <User size={20} />
-              )}
-              <span className="font-medium">
-                {userProfile?.display_name || "Usuario"}
-              </span>
-            </button>
-          )}
+          <button
+            onClick={() => setOpen(!open)}
+            className={`flex items-center space-x-3 ${
+              open ? "bg-[#3A3A5D]" : "bg-[#2A2A4B] hover:bg-[#3A3A5D]"
+            } rounded-full px-4 py-2 text-sm text-white transition-all`}
+            aria-label="Menú de usuario"
+          >
+            {smallImage ? (
+              <img
+                src={smallImage}
+                alt="User Avatar"
+                className="w-8 h-8 rounded-full object-cover border border-[#1DB954]"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-[#1DB954] flex items-center justify-center">
+                <User size={16} className="text-white" />
+              </div>
+            )}
+            <span className="font-medium hidden md:inline-block">
+              {getDisplayName()}
+            </span>
+          </button>
 
           {open && (
-            <div className="absolute right-0 mt-2 w-56 bg-[#2A2A4B] rounded-lg shadow-lg overflow-hidden border border-[#3A3A5D]">
-              <div className="flex items-center p-4 bg-[#3A3A5D]">
-                <img
-                  src={largeImage}
-                  alt="User Avatar Large"
-                  className="w-12 h-12 rounded-full object-cover"
-                />
-                <div className="ml-3 truncate">
-                  <p className="text-sm font-semibold">{userProfile?.display_name || "Usuario"}</p>
-                  <p className="text-xs text-gray-300">{userProfile?.email || "Sin correo"}</p>
+            <div className="absolute right-0 mt-2 w-64 bg-[#2A2A4B] rounded-lg shadow-xl overflow-hidden border border-[#3A3A5D] animate-fade-in">
+              <div className="flex items-center p-4 bg-gradient-to-r from-[#1A1A35] to-[#2A2A4B]">
+                {largeImage ? (
+                  <img
+                    src={largeImage}
+                    alt="User Avatar"
+                    className="w-12 h-12 rounded-full object-cover border-2 border-[#1DB954]"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-[#1DB954] flex items-center justify-center">
+                    <User size={24} className="text-white" />
+                  </div>
+                )}
+                <div className="ml-3 overflow-hidden">
+                  <p className="text-sm font-semibold truncate">
+                    {getDisplayName()}
+                  </p>
+                  <p className="text-xs text-gray-300 truncate">
+                    {getDisplayEmail()}
+                  </p>
+                  {userState.user?.spotify && (
+                    <span className="inline-block mt-1 px-2 py-0.5 text-xs bg-[#1DB954] rounded-full">
+                      Spotify Conectado
+                    </span>
+                  )}
                 </div>
               </div>
-              <button className="w-full text-left px-4 py-3 text-sm hover:bg-[#3A3A5D] flex items-center gap-2">
-                <Settings size={16} /> Configuración
-              </button>
-              <button
-                onClick={onLogout}
-                className="w-full text-left px-4 py-3 text-sm hover:bg-[#3A3A5D] flex items-center gap-2"
-              >
-                <LogOut size={16} /> Cerrar sesión
-              </button>
+
+              <div className="border-t border-[#3A3A5D]">
+                <Link
+                  to="/settings"
+                  className="flex items-center w-full px-4 py-3 text-sm hover:bg-[#3A3A5D] transition-colors"
+                  onClick={() => setOpen(false)}
+                >
+                  <Settings size={16} className="mr-2" />
+                  Configuración
+                </Link>
+                {!userState.user?.spotify && (
+                  <Link
+                    to="/connect-spotify"
+                    className="flex items-center w-full px-4 py-3 text-sm hover:bg-[#3A3A5D] transition-colors"
+                    onClick={() => setOpen(false)}
+                  >
+                    <Music size={16} className="mr-2" />
+                    Conectar Spotify
+                  </Link>
+                )}
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center w-full px-4 py-3 text-sm hover:bg-[#3A3A5D] transition-colors text-red-400"
+                >
+                  <LogOut size={16} className="mr-2" />
+                  Cerrar sesión
+                </button>
+              </div>
             </div>
           )}
         </div>
       ) : (
-        <div className="space-x-4">
-          <button className="bg-[#1DB954] hover:bg-[#1AA84C] text-white px-4 py-2 rounded-full text-sm font-medium">
+        <div className="flex space-x-3">
+          <Link
+            to="/login"
+            className="bg-transparent hover:bg-[#3A3A5D] text-white px-4 py-2 rounded-full text-sm font-medium border border-[#3A3A5D] transition-colors"
+          >
             Iniciar sesión
-          </button>
-          <button className="bg-gray-100 hover:bg-gray-200 text-[#1A1A35] px-4 py-2 rounded-full text-sm font-medium">
+          </Link>
+          <Link
+            to="/register"
+            className="bg-[#1DB954] hover:bg-[#1AA84C] text-white px-4 py-2 rounded-full text-sm font-medium transition-colors"
+          >
             Registrarse
-          </button>
+          </Link>
         </div>
       )}
     </header>
