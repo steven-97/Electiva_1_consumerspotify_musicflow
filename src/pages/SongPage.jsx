@@ -17,7 +17,7 @@ const SongPage = () => {
   useEffect(() => {
     const fetchSong = async () => {
       try {
-        const data = await getSpotifyTrackById(userState.user.token, id);
+        const data = await getSpotifyTrackById(userState.user?.spotify?.accessToken, id);
         setSong(data);
       } catch (err) {
         setError("Error al cargar la canción");
@@ -27,7 +27,7 @@ const SongPage = () => {
       }
     };
 
-    if (id && userState.user?.token) {
+    if (id && userState.user?.spotify.accessToken) {
       fetchSong();
     }
   }, [id, userState]);

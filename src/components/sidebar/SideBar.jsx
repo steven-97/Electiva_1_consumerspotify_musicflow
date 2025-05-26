@@ -16,14 +16,14 @@ const Sidebar = () => {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      if (userState.logged && userState.user.token) {
+      if (userState.logged && userState.user?.spotify?.accessToken) {
         try {
           setLoading(true);
-          const tracks = await getSpotifyUserTracks(userState.user.token);
+          const tracks = await getSpotifyUserTracks(userState.user?.spotify?.accessToken);
           setUserTracks(tracks);
 
           const playlistData = await getSpotifyCurrentUserPlaylist(
-            userState.user.token
+            userState.user?.spotify?.accessToken
           );
           setUserPlaylists(playlistData.items);
           setLoading(false);
