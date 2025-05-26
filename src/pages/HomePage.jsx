@@ -16,29 +16,24 @@ const HomePage = () => {
   const [showContent, setShowContent] = useState(false);
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      if (userState.logged && userState.user.token) {
-        try {
-          setLoading(true);
-          const tracks = await getSpotifyUserTracks(userState.user.token);
-          setUserTracks(tracks);
-
-          const playlistData = await getSpotifyCurrentUserPlaylist(
-            userState.user.token
-          );
-          setUserPlaylists(playlistData.items);
-          setLoading(false);
-          setTimeout(() => setShowContent(true), 50);
-        } catch (err) {
-          console.error("Error al cargar el perfil del usuario.", err);
-          setLoading(false);
-          setTimeout(() => setShowContent(true), 50);
-        }
+  const fetchData = async () => {
+    if (userState.user?.spotify?.accessToken) {
+      try {
+        const [tracks, playlists] = await Promise.all([
+          getSpotifyUserTracks(userState.user.spotify.accessToken),
+          getSpotifyCurrentUserPlaylist(userState.user.spotify.accessToken)
+        ]);
+        
+        setUserTracks(tracks);
+        setUserPlaylists(playlists.items);
+      } catch (error) {
+        toast.error("Error al cargar datos de Spotify");
       }
-    };
+    }
+  };
 
-    fetchUserData();
-  }, [userState]);
+  fetchData();
+}, [userState.user?.spotify?.accessToken]); 
 
   return (
     <div className="h-full min-h-screen bg-[#0A0A1F] text-white font-sans">

@@ -3,13 +3,17 @@ import { LogOut, Settings, User, Music } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import UserContext from "../auth/contexts/UserContext";
 import { getSpotifyUserProfile } from "../auth/hooks/useSpotifyUser";
+import { useCallBack } from "../auth/hooks/useCallback";
 
 const Header = () => {
+  const navigate = useNavigate();
+
+  const { logout, userState } = useContext(UserContext);
+  const { handleSpotifyLogin } = useCallBack();
+
   const [open, setOpen] = useState(false);
   const [spotifyProfile, setSpotifyProfile] = useState(null);
   const [loading, setLoading] = useState(false);
-  const { logout, userState } = useContext(UserContext);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchSpotifyProfile = async () => {
@@ -148,14 +152,17 @@ const Header = () => {
                   Configuración
                 </Link>
                 {!userState.user?.spotify && (
-                  <Link
-                    to="/connect-spotify"
+                  <button
+                    onClick={() => {
+                      localStorage.removeItem("spotify_callback_processed");
+                      localStorage.setItem("spotify_action", "linking");
+                      handleSpotifyLogin(true);
+                    }}
                     className="flex items-center w-full px-4 py-3 text-sm hover:bg-[#3A3A5D] transition-colors"
-                    onClick={() => setOpen(false)}
                   >
                     <Music size={16} className="mr-2" />
                     Conectar Spotify
-                  </Link>
+                  </button>
                 )}
                 <button
                   onClick={handleLogout}

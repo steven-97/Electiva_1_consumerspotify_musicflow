@@ -23,6 +23,7 @@ export const AppRouter = () => {
       ) : (
         <>
           <Route path="/" element={<HomePage />} />
+          <Route path="/callback" element={<CallbackPage />} />
           <Route path="/playlist/:id" element={<PlaylistPage />} />
           <Route path="/song/:id" element={<SongPage />} />
           <Route path="/*" element={<Navigate to="/" replace />} />

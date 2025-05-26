@@ -18,7 +18,7 @@ const PlaylistPage = () => {
   useEffect(() => {
     const fetchPlaylist = async () => {
       try {
-        const data = await getSpotifyPlaylistById(userState.user.token, id);
+        const data = await getSpotifyPlaylistById(userState.user?.spotify?.accessToken, id);
         setPlaylist(data);
       } catch (error) {
         setError("Error al cargar la playlist");
@@ -28,7 +28,7 @@ const PlaylistPage = () => {
       }
     };
 
-    if (id && userState.user?.token) {
+    if (id && userState.user?.spotify.accessToken) {
       fetchPlaylist();
     }
   }, [id, userState]);
