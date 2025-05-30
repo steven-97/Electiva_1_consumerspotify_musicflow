@@ -13,18 +13,21 @@ const PlaylistPage = () => {
   const [playlist, setPlaylist] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showContent, setShowContent] = useState(false); 
+  const [showContent, setShowContent] = useState(false);
 
   useEffect(() => {
     const fetchPlaylist = async () => {
       try {
-        const data = await getSpotifyPlaylistById(userState.user?.spotify?.accessToken, id);
+        const data = await getSpotifyPlaylistById(
+          userState.user?.spotify?.accessToken,
+          id
+        );
         setPlaylist(data);
       } catch (error) {
         setError("Error al cargar la playlist");
       } finally {
         setLoading(false);
-        setTimeout(() => setShowContent(true), 50); 
+        setTimeout(() => setShowContent(true), 50);
       }
     };
 
@@ -33,8 +36,6 @@ const PlaylistPage = () => {
     }
   }, [id, userState]);
 
-  console.log("playlist", playlist);
-  
   return (
     <div className="h-full min-h-screen bg-[#0A0A1F] text-white font-sans">
       <Header />

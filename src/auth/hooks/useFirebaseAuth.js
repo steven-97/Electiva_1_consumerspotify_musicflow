@@ -7,7 +7,7 @@ export const useFirebaseAuth = () => {
       const result = await signInWithPopup(auth, googleProvider);
       return result.user;
     } catch (error) {
-      console.error("Error con Google:", error);
+      toast.error("Error con Google:", error);
     }
   };
 
@@ -16,7 +16,7 @@ export const useFirebaseAuth = () => {
       const result = await signInWithEmailAndPassword(auth, email, password);
       return result.user;
     } catch (error) {
-      console.error("Error con email:", error);
+      toast.error("Error con email:", error);
     }
   };
 

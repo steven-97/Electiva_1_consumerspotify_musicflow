@@ -50,7 +50,6 @@ export const useAuthenticate = (dispatch) => {
       handleSuccessfulLogin(user, "google");
       return true;
     } catch (error) {
-      console.error("Error con Google:", error);
       toast.error("Error al iniciar con Google");
       return false;
     }
@@ -62,7 +61,7 @@ export const useAuthenticate = (dispatch) => {
       handleSuccessfulLogin(result.user);
       return true;
     } catch (error) {
-      console.error("Error con email:", error);
+      toast.error("Error con email:", error);
       dispatch({
         type: authTypes.errors,
         payload: "Credenciales incorrectas",
@@ -77,7 +76,7 @@ export const useAuthenticate = (dispatch) => {
       localStorage.removeItem("user");
       dispatch({ type: authTypes.logout });
     } catch (error) {
-      console.error("Error al cerrar sesión:", error);
+      toast.error("Error al cerrar sesión:", error);
     }
   };
 
@@ -135,7 +134,7 @@ export const useAuthenticate = (dispatch) => {
 
       return true;
     } catch (error) {
-      console.error("Error al registrar usuario:", error);
+      toast.error("Error al registrar usuario:", error);
       dispatch({
         type: authTypes.errors,
         payload: "Error al registrar usuario: " + error.message,
@@ -145,12 +144,10 @@ export const useAuthenticate = (dispatch) => {
   };
 
   const handleSpotifyCallback = async () => {
-    console.log("handleSpotifyCallback called......");
     const params = new URLSearchParams(window.location.search);
     const code = params.get("code");
     const state = params.get("state");
 
-    console.log("Spotify callback params:", { code, state });
     if (!code) {
       dispatch({
         type: authTypes.errors,
@@ -159,7 +156,6 @@ export const useAuthenticate = (dispatch) => {
       return false;
     }
 
-    console.log("Spotify code:", code);
     const clientId = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
     const clientSecret = import.meta.env.VITE_SPOTIFY_CLIENT_SECRET;
     const redirectUri = import.meta.env.VITE_REDIRECT_URI;
@@ -182,9 +178,7 @@ export const useAuthenticate = (dispatch) => {
       const data = await response.json();
       if (!data.access_token) return false;
 
-      console.log("Spotify access token:", data.access_token);
       const spotifyUser = await getSpotifyUserProfile(data.access_token);
-      console.log("Spotify user data:", spotifyUser);
       const spotifyId = spotifyUser.id;
 
       const isLinkingAccount = state === "linking";
@@ -192,7 +186,7 @@ export const useAuthenticate = (dispatch) => {
       const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
 
       if (isLinkingAccount && !currentUser) {
-        throw new Error("Debes iniciar sesión primero para vincular Spotify");
+        toast.error("Debes iniciar sesión primero para vincular Spotify");
       }
 
       const userQuery = await getDocs(
@@ -203,12 +197,8 @@ export const useAuthenticate = (dispatch) => {
         const existingUserDoc = userQuery.docs[0];
         const existingUser = existingUserDoc.data();
 
-        console.log("Usuario existente:", userQuery.docs[0]);
-        console.log("Usuario actual:", existingUserDoc.data());
-        console.log("isLinkingAccount:", isLinkingAccount);
-
         if (isLinkingAccount && existingUser.uid !== currentUser?.uid) {
-          throw new Error(
+          toast.error(
             "Esta cuenta de Spotify ya está vinculada a otro usuario"
           );
         }
@@ -290,7 +280,7 @@ export const useAuthenticate = (dispatch) => {
       });
       return true;
     } catch (error) {
-      console.error("Error en Spotify callback:", error);
+      toast.error("Error en Spotify callback:", error);
       dispatch({
         type: authTypes.errors,
         payload: error.message || "Error al conectar con Spotify",
@@ -326,7 +316,7 @@ export const useAuthenticate = (dispatch) => {
         refreshToken: data.refresh_token || refreshToken,
       };
     } catch (error) {
-      console.error("Error refreshing Spotify token:", error);
+      toast.error("Error refreshing Spotify token:", error);
       throw error;
     }
   };
@@ -337,6 +327,6 @@ export const useAuthenticate = (dispatch) => {
     logout,
     checkAuthState,
     handleSpotifyCallback,
-    registerWithEmail
+    registerWithEmail,
   };
 };

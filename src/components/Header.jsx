@@ -27,7 +27,6 @@ const Header = () => {
           );
           setSpotifyProfile(profile);
         } catch (err) {
-          console.error("Error al cargar perfil de Spotify:", err);
         } finally {
           setLoading(false);
         }
@@ -59,7 +58,6 @@ const Header = () => {
 
           toast.success("Cuenta de Spotify desconectada");
         } catch (error) {
-          console.error("Error al desconectar Spotify:", error);
           toast.error("Error al desconectar Spotify");
         }
       }

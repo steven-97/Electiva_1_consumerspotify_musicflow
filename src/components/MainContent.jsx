@@ -15,7 +15,6 @@ const MainContent = ({ userPlaylists }) => {
         const playlists = await getOtherUsersPlaylists(userState.user?.uid);
         setOtherUsersPlaylists(playlists);
       } catch (error) {
-        console.error("Error fetching other playlists:", error);
       }
     };
 
@@ -31,7 +30,6 @@ const MainContent = ({ userPlaylists }) => {
         const playlists = await getOtherUsersPlaylists(userState.user?.uid);
         setOtherUsersPlaylists(playlists);
       } catch (error) {
-        console.error("Error fetching other playlists:", error);
         setError("No se pudieron cargar las playlists de otros usuarios");
       }
     };
@@ -49,8 +47,6 @@ const MainContent = ({ userPlaylists }) => {
       image: p.image || p.images?.[0]?.url,
       url: p.url || p.external_urls?.spotify,
     })) || [];
-
-  console.log(userPlaylists);
 
   return (
     <main className="flex-1 px-4 py-8 overflow-y-auto">

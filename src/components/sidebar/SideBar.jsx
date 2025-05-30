@@ -28,7 +28,6 @@ const Sidebar = () => {
           setUserPlaylists(playlistData.items);
           setLoading(false);
         } catch (err) {
-          console.log("Error al cargar el perfil del usuario.", err);
           setLoading(false);
         }
       }
@@ -37,7 +36,6 @@ const Sidebar = () => {
     fetchUserData();
   }, [userState]);
 
-  console.log("userData", userPlaylists);
   return (
     <aside className="w-72 bg-[#11112B] p-6 flex flex-col justify-between">
       <div>

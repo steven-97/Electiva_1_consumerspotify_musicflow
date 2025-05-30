@@ -43,7 +43,6 @@ export const useSpotifyToken = () => {
 
         setValidToken(newTokenData.accessToken);
       } catch (error) {
-        console.error("Error refreshing token:", error);
         toast.error("La sesión de Spotify ha expirado. Por favor, reconecta tu cuenta.");
       } finally {
         setLoading(false);

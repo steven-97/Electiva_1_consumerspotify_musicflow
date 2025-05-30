@@ -1,26 +1,30 @@
-import { collection, doc, getDocs, query, where, writeBatch } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDocs,
+  query,
+  where,
+  writeBatch,
+} from "firebase/firestore";
 import { db } from "../../firebase/firebase";
 
 export const getSpotifyUserProfile = async (accessToken) => {
   try {
-    console.log("accessToken", accessToken);
     const response = await fetch("https://api.spotify.com/v1/me", {
       headers: {
         Authorization: "Bearer " + accessToken,
       },
     });
 
-    console.log("response", response);
     return response.json();
   } catch (error) {
-    console.error("Error al obtener el perfil del usuario de Spotify:", error);
+    toast.error("Error al obtener el perfil del usuario de Spotify:", error);
+
     throw error;
   }
 };
 
 export const getSpotifyUserTracks = async (accessToken) => {
-  console.log("accessToken", accessToken);
-
   try {
     const response = await fetch("https://api.spotify.com/v1/me/tracks", {
       headers: {
@@ -28,10 +32,8 @@ export const getSpotifyUserTracks = async (accessToken) => {
       },
     });
 
-    console.log("responsetracks", response);
     return response.json();
   } catch (error) {
-    console.error("Error al obtener el perfil del usuario de Spotify:", error);
     throw error;
   }
 };
@@ -46,7 +48,6 @@ export const getSpotifyCurrentUserPlaylist = async (accessToken) => {
 
     return response.json();
   } catch (error) {
-    console.error("Error al obtener el perfil del usuario de Spotify:", error);
     throw error;
   }
 };
@@ -64,7 +65,6 @@ export const getSpotifyPlaylistById = async (accessToken, playlistId) => {
 
     return response.json();
   } catch (error) {
-    console.error("Error al obtener el perfil del usuario de Spotify:", error);
     throw error;
   }
 };
@@ -79,7 +79,6 @@ export const getSpotifyTrackById = async (accessToken, id) => {
 
     return response.json();
   } catch (error) {
-    console.error("Error al obtener el perfil del usuario de Spotify:", error);
     throw error;
   }
 };
@@ -127,7 +126,6 @@ export const saveUserPlaylists = async (userId, playlists) => {
     });
     await newBatch.commit();
   } catch (error) {
-    console.error("Error saving playlists:", error);
     throw error;
   }
 };
@@ -138,7 +136,6 @@ export const getUserPlaylistsFromDB = async (userId) => {
     const snapshot = await getDocs(playlistsRef);
     return snapshot.docs.map((doc) => doc.data());
   } catch (error) {
-    console.error("Error getting playlists from DB:", error);
     throw error;
   }
 };
@@ -151,23 +148,24 @@ export const getOtherUsersPlaylists = async (currentUserId) => {
     );
 
     const allPlaylists = [];
-    
+
     for (const doc of querySnapshot.docs) {
       const user = doc.data();
       if (user.uid === currentUserId) continue;
-      
+
       const userPlaylists = await getUserPlaylistsFromDB(user.uid);
-      allPlaylists.push(...userPlaylists.map(p => ({
-        ...p,
-        userId: user.uid,
-        userDisplayName: user.owner || user.email.split('@')[0],
-        userPhoto: user.photoURL
-      })));
+      allPlaylists.push(
+        ...userPlaylists.map((p) => ({
+          ...p,
+          userId: user.uid,
+          userDisplayName: user.owner || user.email.split("@")[0],
+          userPhoto: user.photoURL,
+        }))
+      );
     }
 
     return allPlaylists;
   } catch (error) {
-    console.error("Error getting other users playlists:", error);
     throw error;
   }
 };
