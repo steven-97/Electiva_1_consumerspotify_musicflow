@@ -26,6 +26,7 @@ export const UserProvider = ({ children }) => {
     loginWithEmail,
     checkAuthState,
     handleSpotifyCallback,
+    registerWithEmail
   } = useAuthenticate(dispatch);
 
   return (
@@ -38,6 +39,7 @@ export const UserProvider = ({ children }) => {
         loginWithEmail,
         checkAuthState,
         handleSpotifyCallback,
+        registerWithEmail
       }}
     >
       {children}

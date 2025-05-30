@@ -4,11 +4,13 @@ import { Link, useNavigate } from "react-router-dom";
 import UserContext from "../auth/contexts/UserContext";
 import { getSpotifyUserProfile } from "../auth/hooks/useSpotifyUser";
 import { useCallBack } from "../auth/hooks/useCallback";
+import { doc, setDoc } from "firebase/firestore";
+import { toast } from "react-hot-toast";
+import { db } from "../firebase/firebase";
 
 const Header = () => {
   const navigate = useNavigate();
-
-  const { logout, userState } = useContext(UserContext);
+  const { logout, userState, dispatch } = useContext(UserContext);
   const { handleSpotifyLogin } = useCallBack();
 
   const [open, setOpen] = useState(false);
@@ -17,13 +19,11 @@ const Header = () => {
 
   useEffect(() => {
     const fetchSpotifyProfile = async () => {
-      console.log("userState", userState);
-
-      if (userState.logged && userState.user?.spotify?.token) {
+      if (userState.logged && userState.user?.spotify?.accessToken) {
         try {
           setLoading(true);
           const profile = await getSpotifyUserProfile(
-            userState.user.spotify.token
+            userState.user.spotify.accessToken
           );
           setSpotifyProfile(profile);
         } catch (err) {
@@ -37,7 +37,38 @@ const Header = () => {
     fetchSpotifyProfile();
   }, [userState]);
 
-  console.log("------", spotifyProfile);
+  const handleSpotifyConnect = async () => {
+    if (userState.user?.spotify?.refreshToken) {
+      const confirm = window.confirm("¿Desconectar tu cuenta de Spotify?");
+      if (confirm) {
+        try {
+          const updatedUser = {
+            ...userState.user,
+            spotify: null,
+          };
+
+          await setDoc(doc(db, "users", userState.user.uid), updatedUser);
+
+          localStorage.setItem("user", JSON.stringify(updatedUser));
+          dispatch({
+            type: "UPDATE_USER",
+            payload: updatedUser,
+          });
+
+          setSpotifyProfile(null);
+
+          toast.success("Cuenta de Spotify desconectada");
+        } catch (error) {
+          console.error("Error al desconectar Spotify:", error);
+          toast.error("Error al desconectar Spotify");
+        }
+      }
+    } else {
+      localStorage.removeItem("spotify_callback_processed");
+      localStorage.setItem("spotify_action", "linking");
+      handleSpotifyLogin(true);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -45,7 +76,6 @@ const Header = () => {
     navigate("/login");
   };
 
-  // Obtener imagen del usuario (Spotify, Google o default)
   const getUserImage = (size = "small") => {
     if (spotifyProfile?.images?.length > 0) {
       const img = spotifyProfile.images.find((img) =>
@@ -56,7 +86,6 @@ const Header = () => {
     return userState.user?.photoURL || null;
   };
 
-  // Obtener nombre para mostrar
   const getDisplayName = () => {
     return (
       spotifyProfile?.display_name ||
@@ -66,7 +95,6 @@ const Header = () => {
     );
   };
 
-  // Obtener email para mostrar
   const getDisplayEmail = () => {
     return userState.user?.email || spotifyProfile?.email || "Sin correo";
   };
@@ -80,10 +108,10 @@ const Header = () => {
         to="/"
         className="flex items-center gap-3 hover:opacity-80 transition-opacity"
       >
-        <div className="bg-[#1DB954] p-2 rounded-full">
+        <div className="bg-gradient-to-r from-pink-500 to-blue-500 p-2 rounded-full">
           <Music size={24} className="text-white" />
         </div>
-        <span className="text-2xl font-bold tracking-wide bg-gradient-to-r from-[#1DB954] to-[#4B00FF] bg-clip-text text-transparent">
+        <span className="text-2xl font-bold tracking-wide bg-gradient-to-r from-pink-500 to-blue-500  bg-clip-text  text-transparent">
           Music Flow
         </span>
       </Link>
@@ -153,15 +181,13 @@ const Header = () => {
                 </Link>
                 {!userState.user?.spotify && (
                   <button
-                    onClick={() => {
-                      localStorage.removeItem("spotify_callback_processed");
-                      localStorage.setItem("spotify_action", "linking");
-                      handleSpotifyLogin(true);
-                    }}
+                    onClick={handleSpotifyConnect}
                     className="flex items-center w-full px-4 py-3 text-sm hover:bg-[#3A3A5D] transition-colors"
                   >
                     <Music size={16} className="mr-2" />
-                    Conectar Spotify
+                    {userState.user?.spotify?.refreshToken
+                      ? "Desconectar Spotify"
+                      : "Conectar Spotify"}
                   </button>
                 )}
                 <button
@@ -185,7 +211,7 @@ const Header = () => {
           </Link>
           <Link
             to="/register"
-            className="bg-[#1DB954] hover:bg-[#1AA84C] text-white px-4 py-2 rounded-full text-sm font-medium transition-colors"
+            className="font-bold bg-gradient-to-r from-pink-500 to-blue-500 text-transparent bg-clip-text px-4 py-2 rounded-full text-sm  transition-colors"
           >
             Registrarse
           </Link>

@@ -6,7 +6,11 @@ import UserContext from "../auth/contexts/UserContext";
 import {
   getSpotifyCurrentUserPlaylist,
   getSpotifyUserTracks,
+  getUserPlaylistsFromDB,
+  saveUserPlaylists,
 } from "../auth/hooks/useSpotifyUser";
+import { useSpotifyToken } from "../auth/hooks/useSpotifyToken";
+import toast from "react-hot-toast";
 
 const HomePage = () => {
   const { userState } = useContext(UserContext);
@@ -14,26 +18,36 @@ const HomePage = () => {
   const [userPlaylists, setUserPlaylists] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showContent, setShowContent] = useState(false);
+  const { token: spotifyToken, loading: tokenLoading } = useSpotifyToken();
 
   useEffect(() => {
-  const fetchData = async () => {
-    if (userState.user?.spotify?.accessToken) {
+    const fetchData = async () => {
+      if (!spotifyToken || tokenLoading) return;
+
+      setLoading(true);
       try {
-        const [tracks, playlists] = await Promise.all([
-          getSpotifyUserTracks(userState.user.spotify.accessToken),
-          getSpotifyCurrentUserPlaylist(userState.user.spotify.accessToken)
-        ]);
-        
+        const dbPlaylists = await getUserPlaylistsFromDB(userState.user.uid);
+
+        if (dbPlaylists.length > 0) {
+          setUserPlaylists(dbPlaylists);
+        } else {
+          const playlists = await getSpotifyCurrentUserPlaylist(spotifyToken);
+          setUserPlaylists(playlists.items);
+          await saveUserPlaylists(userState.user.uid, playlists.items);
+        }
+
+        const tracks = await getSpotifyUserTracks(spotifyToken);
         setUserTracks(tracks);
-        setUserPlaylists(playlists.items);
       } catch (error) {
         toast.error("Error al cargar datos de Spotify");
+      } finally {
+        setLoading(false);
+        setShowContent(true);
       }
-    }
-  };
+    };
 
-  fetchData();
-}, [userState.user?.spotify?.accessToken]); 
+    fetchData();
+  }, [spotifyToken, tokenLoading, userState.user?.uid]);
 
   return (
     <div className="h-full min-h-screen bg-[#0A0A1F] text-white font-sans">

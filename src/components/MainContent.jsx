@@ -1,34 +1,90 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import PlaylistRow from "./playlist/PlaylistRow";
+import { getOtherUsersPlaylists } from "../auth/hooks/useSpotifyUser";
+import { useContext } from "react";
+import UserContext from "../auth/contexts/UserContext";
 
 const MainContent = ({ userPlaylists }) => {
-  
-  const formattedUserPlaylists = userPlaylists.map((p) => ({
-    id: p.id,
-    playlistName: p.name,
-    username: p.owner.display_name || "Tú",
-    image: p.images?.[0]?.url,
-    url: p.external_urls?.spotify,
-  }));
+  const { userState } = useContext(UserContext);
+  const [otherUsersPlaylists, setOtherUsersPlaylists] = useState([]);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchOtherPlaylists = async () => {
+      try {
+        const playlists = await getOtherUsersPlaylists(userState.user?.uid);
+        setOtherUsersPlaylists(playlists);
+      } catch (error) {
+        console.error("Error fetching other playlists:", error);
+      }
+    };
+
+    if (userState.user?.uid) {
+      fetchOtherPlaylists();
+    }
+  }, [userState.user?.uid]);
+
+  useEffect(() => {
+    const fetchOtherPlaylists = async () => {
+      setError(null);
+      try {
+        const playlists = await getOtherUsersPlaylists(userState.user?.uid);
+        setOtherUsersPlaylists(playlists);
+      } catch (error) {
+        console.error("Error fetching other playlists:", error);
+        setError("No se pudieron cargar las playlists de otros usuarios");
+      }
+    };
+
+    if (userState.user?.uid) {
+      fetchOtherPlaylists();
+    }
+  }, [userState.user?.uid]);
+
+  const formattedUserPlaylists =
+    userPlaylists?.map((p) => ({
+      id: p.id,
+      name: p.name,
+      owner: typeof p.owner === "string" ? p.owner : "Tú",
+      image: p.image || p.images?.[0]?.url,
+      url: p.url || p.external_urls?.spotify,
+    })) || [];
+
+  console.log(userPlaylists);
 
   return (
     <main className="flex-1 px-4 py-8 overflow-y-auto">
+      {error && (
+        <div className="text-red-500 p-4 bg-red-500/10 rounded-lg">{error}</div>
+      )}
       <div className="space-y-10">
-        {userPlaylists ? (
+        {formattedUserPlaylists.length > 0 && (
           <div>
-            <h1 className="text-3xl font-bold mb-4">De todo tu gusto</h1>
-            <PlaylistRow
-              user={{
-                playlists: formattedUserPlaylists,
-              }}
-            />
-          </div>
-        ) : (
-          <div>
-            <h1 className="text-3xl font-bold mb-4">No tienes playlists</h1>
-            <p className="text-gray-500">Parece que no tienes playlists disponibles en tu cuenta.</p>
+            <h1 className="text-3xl font-bold mb-4">Tus playlists</h1>
+            <PlaylistRow playlists={formattedUserPlaylists} />
           </div>
         )}
+
+        {otherUsersPlaylists.length > 0 && (
+          <div>
+            <h1 className="text-3xl font-bold mb-4">
+              Playlists de la comunidad
+            </h1>
+            <PlaylistRow playlists={otherUsersPlaylists} showOwner={true} />
+          </div>
+        )}
+
+        {formattedUserPlaylists.length === 0 &&
+          otherUsersPlaylists.length === 0 && (
+            <div>
+              <h1 className="text-3xl font-bold mb-4">
+                No hay playlists disponibles
+              </h1>
+              <p className="text-gray-500">
+                Parece que no hay playlists disponibles en este momento.
+              </p>
+            </div>
+          )}
       </div>
     </main>
   );

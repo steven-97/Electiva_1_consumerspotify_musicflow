@@ -24,7 +24,6 @@ export const useAuthenticate = (dispatch) => {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
 
-      // Verificar si el usuario ya existe en Firestore
       const userDoc = await getDoc(doc(db, "users", user.uid));
       const userExists = userDoc.exists();
 
@@ -113,11 +112,43 @@ export const useAuthenticate = (dispatch) => {
     });
   };
 
+  const registerWithEmail = async (email, password) => {
+    try {
+      const result = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      const user = result.user;
+
+      const newUserData = {
+        uid: user.uid,
+        displayName: user.email.split("@")[0],
+        email: user.email,
+        photoURL: null,
+        provider: "email",
+        spotify: null,
+      };
+
+      await setDoc(doc(db, "users", user.uid), newUserData);
+      handleSuccessfulLogin(user, "email");
+
+      return true;
+    } catch (error) {
+      console.error("Error al registrar usuario:", error);
+      dispatch({
+        type: authTypes.errors,
+        payload: "Error al registrar usuario: " + error.message,
+      });
+      return false;
+    }
+  };
+
   const handleSpotifyCallback = async () => {
     console.log("handleSpotifyCallback called......");
     const params = new URLSearchParams(window.location.search);
     const code = params.get("code");
-    const state = params.get("state"); // Nuevo: obtenemos el parámetro state
+    const state = params.get("state");
 
     console.log("Spotify callback params:", { code, state });
     if (!code) {
@@ -135,7 +166,6 @@ export const useAuthenticate = (dispatch) => {
     const basic = btoa(`${clientId}:${clientSecret}`);
 
     try {
-      // 1. Obtener token de acceso de Spotify
       const response = await fetch("https://accounts.spotify.com/api/token", {
         method: "POST",
         headers: {
@@ -149,35 +179,27 @@ export const useAuthenticate = (dispatch) => {
         }),
       });
 
-      console.log("Spotify token response:", response);
       const data = await response.json();
-      console.log("Spotify token data:", data);
       if (!data.access_token) return false;
 
       console.log("Spotify access token:", data.access_token);
-      // 2. Obtener perfil de Spotify
       const spotifyUser = await getSpotifyUserProfile(data.access_token);
       console.log("Spotify user data:", spotifyUser);
       const spotifyId = spotifyUser.id;
 
-      // 3. Determinar si es vinculación o login normal
       const isLinkingAccount = state === "linking";
       const currentUserStr = localStorage.getItem("user");
       const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
 
-      // 4. Validar usuario para vinculación
       if (isLinkingAccount && !currentUser) {
         throw new Error("Debes iniciar sesión primero para vincular Spotify");
       }
 
-      // 5. Buscar si el Spotify ID ya está en uso
       const userQuery = await getDocs(
         query(collection(db, "users"), where("spotify.id", "==", spotifyId))
       );
 
-      // 6. Manejar casos posibles
       if (!userQuery.empty) {
-        // Usuario existente con este Spotify ID
         const existingUserDoc = userQuery.docs[0];
         const existingUser = existingUserDoc.data();
 
@@ -185,20 +207,20 @@ export const useAuthenticate = (dispatch) => {
         console.log("Usuario actual:", existingUserDoc.data());
         console.log("isLinkingAccount:", isLinkingAccount);
 
-        // Si es vinculación pero a otro usuario
         if (isLinkingAccount && existingUser.uid !== currentUser?.uid) {
           throw new Error(
             "Esta cuenta de Spotify ya está vinculada a otro usuario"
           );
         }
 
-        // Actualizar token y datos (para ambos casos)
         const updatedUser = {
           ...existingUser,
           spotify: {
             ...existingUser.spotify,
             accessToken: data.access_token,
+            refreshToken: data.refresh_token,
             linkedAt: new Date(),
+            expiresAt: Date.now() + data.expires_in * 1000,
           },
         };
 
@@ -212,8 +234,6 @@ export const useAuthenticate = (dispatch) => {
         return true;
       }
 
-      // 7. Si es vinculación a usuario existente
-      console.log(isLinkingAccount, currentUser);
       if (isLinkingAccount && currentUser) {
         const userData = {
           ...currentUser,
@@ -223,10 +243,11 @@ export const useAuthenticate = (dispatch) => {
             displayName: spotifyUser.display_name,
             photoURL: spotifyUser.images?.[0]?.url || null,
             accessToken: data.access_token,
+            refresh_token: data.refresh_token,
             linkedAt: new Date(),
+            expiresAt: Date.now() + data.expires_in * 1000,
           },
         };
-        console.log("Vinculando Spotify a usuario existente:", userData);
         await setDoc(doc(db, "users", currentUser.uid), userData, {
           merge: true,
         });
@@ -242,7 +263,6 @@ export const useAuthenticate = (dispatch) => {
         return true;
       }
 
-      // 8. Si es login nuevo con Spotify
       const newUserData = {
         uid: `spotify_${spotifyId}`,
         displayName: spotifyUser.display_name,
@@ -252,7 +272,9 @@ export const useAuthenticate = (dispatch) => {
         spotify: {
           id: spotifyId,
           accessToken: data.access_token,
+          refreshToken: data.refresh_token,
           linkedAt: new Date(),
+          expiresAt: Date.now() + data.expires_in * 1000,
         },
       };
 
@@ -277,11 +299,44 @@ export const useAuthenticate = (dispatch) => {
     }
   };
 
+  const refreshSpotifyToken = async (refreshToken) => {
+    const clientId = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
+    const clientSecret = import.meta.env.VITE_SPOTIFY_CLIENT_SECRET;
+    const basic = btoa(`${clientId}:${clientSecret}`);
+
+    try {
+      const response = await fetch("https://accounts.spotify.com/api/token", {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${basic}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          grant_type: "refresh_token",
+          refresh_token: refreshToken,
+        }),
+      });
+
+      const data = await response.json();
+      if (!data.access_token) throw new Error("Failed to refresh token");
+
+      return {
+        accessToken: data.access_token,
+        expiresAt: Date.now() + data.expires_in * 1000,
+        refreshToken: data.refresh_token || refreshToken,
+      };
+    } catch (error) {
+      console.error("Error refreshing Spotify token:", error);
+      throw error;
+    }
+  };
+
   return {
     loginWithGoogle,
     loginWithEmail,
     logout,
     checkAuthState,
     handleSpotifyCallback,
+    registerWithEmail
   };
 };
