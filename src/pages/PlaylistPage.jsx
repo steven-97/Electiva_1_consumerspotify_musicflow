@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
-import PlaylistHero from "../components/playlist/PlaylistHero";
-import SongCardList from "../components/playlist/SongCardList";
+import PlaylistHero from "../music/playlist/PlaylistHero";
+import SongCardList from "../music/playlist/SongCardList";
 import { getSpotifyPlaylistById } from "../auth/hooks/useSpotifyUser";
 import { useParams } from "react-router-dom";
 import UserContext from "../auth/contexts/UserContext";

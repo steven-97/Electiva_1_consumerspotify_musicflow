@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import PlaylistRow from "./playlist/PlaylistRow";
+import PlaylistRow from "../music/playlist/PlaylistRow";
 import { getOtherUsersPlaylists } from "../auth/hooks/useSpotifyUser";
 import { useContext } from "react";
 import UserContext from "../auth/contexts/UserContext";

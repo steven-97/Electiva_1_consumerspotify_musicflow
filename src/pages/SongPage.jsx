@@ -4,7 +4,7 @@ import { getSpotifyTrackById } from "../auth/hooks/useSpotifyUser";
 import UserContext from "../auth/contexts/UserContext";
 import Header from "../components/Header";
 import Sidebar from "../components/sidebar/SideBar";
-import SongHero from "../components/songs/SongHero";
+import SongHero from "../music/songs/SongHero";
 
 const SongPage = () => {
   const { id } = useParams(); 
